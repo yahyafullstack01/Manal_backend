@@ -14,6 +14,8 @@ mongoose.connect("mongodb+srv://yahyafullstack01:Yahya1998@yahya.nmc63m5.mongodb
 .then((()=> console.log("connected to mongodb")))
 .catch(error=>console.error("failed to connect to mongo db",error));
 
+
+//create schema for sending the date to mongo
 const UserSchema = new mongoose.Schema({
     username: {type: String, required: true},
     useremail:{ type :String,required:true },
@@ -21,6 +23,7 @@ const UserSchema = new mongoose.Schema({
     userphone:{type:String, required:true},
     sessionsnumber:{type:String},
     reservationDate:[{
+        _id: false,
         date:{type:String, required:true},
         time:{type:String, required:true},
     }]
@@ -38,9 +41,26 @@ UserSchema.pre('save', function(next){
 
 const Users=new mongoose.model('Users',UserSchema);
 
+//get the data form mongo 
+app.get('/api/users', async (req, res) => {
+    try {
+        const data = await Users.find({});
+        const dateTimeArr = data.map((item) => item.reservationDate).flat();
+        const FilteredDateTime = dateTimeArr.map((obj) => {
+            const newObj = { ...obj._doc };
+            return newObj;
+        });
+        res.json(FilteredDateTime);
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        res.status(500).json({ message: 'Failed to fetch data' });
+    }
+});
+
+//for sending the data to mongodb
 const test = new Users({
-    username: 'Harry',
-    useremail: 'Harry@gmail.com',
+    username: 'Samer',
+    useremail: 'Samer@gmail.com',
     userphone: '1231232',
     package:'',
     sessionsnumber:'12',
@@ -59,9 +79,6 @@ test.save()
     .catch((error) => {
         console.error('Error saving user:', error);
     });
-
-
-
 
 
 app.listen(port, ()=>{
