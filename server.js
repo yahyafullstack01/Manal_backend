@@ -7,8 +7,10 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 const port = 3001;
+const password = encodeURIComponent('Manal@2023'); // URL-encode the password
+const uri = `mongodb+srv://manallifecoach2023:${password}@cluster0.yggsvdd.mongodb.net/Bookings`;
 // Connect to MongoDB Atlas and set the connection variable
-mongoose.connect("mongodb+srv://yahyafullstack01:Yahya1998@yahya.nmc63m5.mongodb.net/", { 
+mongoose.connect(uri, { 
         useNewUrlParser: true, useUnifiedTopology: true 
 })
 .then((()=> console.log("connected to mongodb")))
@@ -59,7 +61,7 @@ app.get('/api/users', async (req, res) => {
 
 //for sending the data to mongodb
 const test = new Users({
-    username: 'Samer',
+    username: 'Sss',
     useremail: 'Samer@gmail.com',
     userphone: '1231232',
     package:'',
