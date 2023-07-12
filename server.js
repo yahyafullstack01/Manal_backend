@@ -22,6 +22,7 @@ const UserSchema = new mongoose.Schema({
     userPhone: { type: String, required: true },
     user_session_number: { type: String },
     packageType: { type: String },
+    price: { type: String },
     reservationDate: [
         {
             _id: false,
@@ -43,13 +44,15 @@ UserSchema.pre('save', function (next) {
 const User = mongoose.model('Users', UserSchema);
 
 app.post('/api/bookings', (req, res) => {
-    const { username, useremail, user_session_number, userPhone, packageType, reservationDate } = req.body;
+    const { username, useremail, user_session_number, userPhone, price, packageType, reservationDate } = req.body;
+
 
     const newUser = new User({
         username,
         useremail,
         userPhone,
         user_session_number,
+        price,
         packageType,
         reservationDate,
     });
