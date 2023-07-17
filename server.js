@@ -1,8 +1,11 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const app = express();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const { google } = require('googleapis');
+const privatekey = require('./auth.json');
+const nodemailer = require('nodemailer');
 
+const app = express();
 app.use(express.json());
 app.use(cors());
 
@@ -40,26 +43,111 @@ UserSchema.pre('save', function (next) {
     next();
 });
 
-// Create a Mongoose model based on the user schema
 const User = mongoose.model('Users', UserSchema);
 
+// Create events in My Google Calendar
+const createEvent = async (userData) => {
+    try {
+        const jwtClient = new google.auth.JWT(
+            privatekey.client_email,
+            null,
+            privatekey.private_key,
+            ['https://www.googleapis.com/auth/calendar']
+        );
+
+        await jwtClient.authorize();
+
+        const calendar = google.calendar({ version: 'v3', auth: jwtClient });
+
+        for (const bookingData of userData.reservationDate) {
+            console.log('bookingData.date:', bookingData.date);
+            console.log('bookingData.time:', bookingData.time);
+
+            const [hours, minutes, period] = bookingData.time.split(/:| /);
+            let hour = parseInt(hours, 10);
+
+            if (period.toLowerCase() === 'pm' && hour < 12) {
+                hour += 12;
+            } else if (period.toLowerCase() === 'am' && hour === 12) {
+                hour = 0;
+            }
+
+            const startDate = new Date(`${bookingData.date}T${hour.toString().padStart(2, '0')}:${minutes}:00`);
+            const endDate = new Date(startDate.getTime() + 1 * 60 * 60 * 1000); // Set end time 1 hour after start time
+
+            const event = {
+                summary: userData.username,
+                description: `${userData.packageType}\nEmail: ${userData.useremail}\nPhone Number: ${userData.userPhone}`,
+                start: {
+                    dateTime: startDate.toISOString(),
+                    timeZone: 'Europe/Brussels',
+                },
+                end: {
+                    dateTime: endDate.toISOString(),
+                    timeZone: 'Europe/Brussels',
+                },
+            };
+
+            await calendar.events.insert({
+                calendarId: privatekey.calendar_ID,
+                resource: event,
+            });
+        }
+
+        console.log('Events created');
+    } catch (error) {
+        console.error('Error creating events:', error);
+    }
+};
+
+// Nodemailer transporter configuration
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'manallifecoach2023@gmail.com',
+        pass: 'uypkrbiiofqybwtq',
+    }
+});
+
+// Send Data Im retreaving from the Frontend and send to My MongoDb
 app.post('/api/bookings', (req, res) => {
     const { username, useremail, user_session_number, userPhone, price, packageType, reservationDate } = req.body;
-
 
     const newUser = new User({
         username,
         useremail,
         userPhone,
         user_session_number,
-        price,
         packageType,
+        price,
         reservationDate,
     });
 
     newUser
         .save()
         .then(() => {
+            // Create calendar events
+            createEvent(newUser);
+
+            // Send confirmation email
+            const mailOptions = {
+                from: 'manallifecoach2023@gmail.com',
+                to: useremail,
+                subject: 'Reservation Confirmation',
+                text: 'Your reservation has been successful. Thank you!',
+                headers: {
+                    'Importance': 'high',
+                },
+            };
+
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.error('Error sending email:', error);
+                } else {
+                    console.log('Email sent:', info.response);
+                }
+            });
+
             res.json({ message: 'Booking created successfully' });
         })
         .catch((error) => {
@@ -68,7 +156,7 @@ app.post('/api/bookings', (req, res) => {
         });
 });
 
-
+// Fetch tn dates and times in My MongoDb
 app.get('/api/users', async (req, res) => {
     try {
         const data = await User.find({});
@@ -83,7 +171,6 @@ app.get('/api/users', async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch data' });
     }
 });
-
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
