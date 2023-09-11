@@ -11,7 +11,8 @@ app.use(cors());
 
 const port = 3001;
 const password = encodeURIComponent('Manal@2023');
-const uri = `mongodb+srv://manallifecoach2023:${password}@cluster0.yggsvdd.mongodb.net/Bookings`;
+// const uri = `mongodb+srv://manallifecoach2023:${password}@cluster0.yggsvdd.mongodb.net/Bookings`;
+const uri = "mongodb://127.0.0.1:27017/Bookings"
 
 // Connect to MongoDB Atlas and set the connection variable
 mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -23,7 +24,6 @@ const UserSchema = new mongoose.Schema({
     username: { type: String, required: true },
     useremail: { type: String, required: true, lowercase: true },
     userPhone: { type: String, required: true },
-    user_session_number: { type: String },
     packageType: { type: String },
     price: { type: String },
     reservationDate: [
@@ -111,13 +111,12 @@ const transporter = nodemailer.createTransport({
 
 // Send Data Im retreaving from the Frontend and send to My MongoDb
 app.post('/api/bookings', (req, res) => {
-    const { username, useremail, user_session_number, userPhone, price, packageType, reservationDate } = req.body;
+    const { username, useremail, userPhone, price, packageType, reservationDate } = req.body;
 
     const newUser = new User({
         username,
         useremail,
         userPhone,
-        user_session_number,
         packageType,
         price,
         reservationDate,
@@ -129,16 +128,22 @@ app.post('/api/bookings', (req, res) => {
             // Create calendar events
             createEvent(newUser);
 
-            // Send confirmation email
+            // Construct the email content with dates and times
+            const reservationDetails = reservationDate.map((bookingData, index) => {
+                const [date, time] = [bookingData.date, bookingData.time];
+                return `${date} at ${time}${index === reservationDate.length - 1 ? '\n' : ','}`;
+            }).join(',\n');
+
             const mailOptions = {
                 from: 'manallifecoach2023@gmail.com',
                 to: useremail,
                 subject: 'Reservation Confirmation',
-                text: 'Your reservation has been successful. Thank you!',
+                text: `Your reservation for:\n${reservationDetails}\nhas been successful. Thank you!`, // Include reservation details here
                 headers: {
                     'Importance': 'high',
                 },
             };
+
 
             transporter.sendMail(mailOptions, (error, info) => {
                 if (error) {
