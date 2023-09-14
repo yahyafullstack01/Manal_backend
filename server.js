@@ -25,6 +25,7 @@ const UserSchema = new mongoose.Schema({
     useremail: { type: String, required: true, lowercase: true },
     userPhone: { type: String, required: true },
     packageType: { type: String },
+    userSessionType: { type: String },
     price: { type: String },
     reservationDate: [
         {
@@ -77,7 +78,7 @@ const createEvent = async (userData) => {
 
             const event = {
                 summary: userData.username,
-                description: `${userData.packageType}\nEmail: ${userData.useremail}\nPhone Number: ${userData.userPhone}`,
+                description:`${userData.packageType}\nTypeOfSession:${userData.userSessionType}\nEmail: ${userData.useremail}\nPhone Number: ${userData.userPhone}`,
                 start: {
                     dateTime: startDate.toISOString(),
                     timeZone: 'Europe/Brussels',
@@ -111,12 +112,13 @@ const transporter = nodemailer.createTransport({
 
 // Send Data Im retreaving from the Frontend and send to My MongoDb
 app.post('/api/bookings', (req, res) => {
-    const { username, useremail, userPhone, price, packageType, reservationDate } = req.body;
+    const { username, useremail, userPhone, userSessionType, price, packageType, reservationDate } = req.body;
 
     const newUser = new User({
         username,
         useremail,
         userPhone,
+        userSessionType,
         packageType,
         price,
         reservationDate,
