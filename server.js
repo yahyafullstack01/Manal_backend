@@ -22,8 +22,8 @@ mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
 //schema creation to send the date to mongo
 const UserSchema = new mongoose.Schema({
     username: { type: String, required: true },
-    useremail: { type: String, required: true, lowercase: true },
-    userPhone: { type: String, required: true },
+    useremail: { type: String, lowercase: true },
+    userPhone: { type: String,},
     packageType: { type: String },
     userSessionType: { type: String },
     price: { type: String },
