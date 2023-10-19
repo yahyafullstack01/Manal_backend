@@ -9,7 +9,15 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const port = 3001;
+
+app.use(cors({
+    origin: 'https://reservationmanal.vercel.app',
+    credentials: true,
+}));
+
+const port = "https://reservationmanal.vercel.app" || 3001;
+
+
 const password = encodeURIComponent('Manal@2023');
 // const uri = `mongodb+srv://manallifecoach2023:${password}@cluster0.yggsvdd.mongodb.net/Bookings`;
 const uri = "mongodb://127.0.0.1:27017/Bookings"
@@ -23,7 +31,7 @@ mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
 const UserSchema = new mongoose.Schema({
     username: { type: String, required: true },
     useremail: { type: String, lowercase: true },
-    userPhone: { type: String,},
+    userPhone: { type: String, },
     packageType: { type: String },
     userSessionType: { type: String },
     price: { type: String },
@@ -78,7 +86,7 @@ const createEvent = async (userData) => {
 
             const event = {
                 summary: userData.username,
-                description:`${userData.packageType}\nTypeOfSession:${userData.userSessionType}\nEmail: ${userData.useremail}\nPhone Number: ${userData.userPhone}`,
+                description: `${userData.packageType}\nTypeOfSession:${userData.userSessionType}\nEmail: ${userData.useremail}\nPhone Number: ${userData.userPhone}`,
                 start: {
                     dateTime: startDate.toISOString(),
                     timeZone: 'Europe/Brussels',
